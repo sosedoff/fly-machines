@@ -250,6 +250,8 @@ func (c *Client) newRequest(ctx context.Context, method string, path string, bod
 	if err != nil {
 		return nil, err
 	}
+
+	req.Header.Add("User-Agent", ClientVersion())
 	req.Header.Add("Authorization", "Bearer "+c.apiToken)
 	req.Header.Add("Content-Type", "application/json")
 
@@ -271,18 +273,7 @@ func (c *Client) execute(req *http.Request, out any) error {
 		return json.NewDecoder(resp.Body).Decode(out)
 	}
 
-	apiErr := APIError{
-		StatusCode: resp.StatusCode,
-		Headers:    map[string]string{},
-	}
-	for k, v := range resp.Header {
-		apiErr.Headers[k] = v[0]
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&apiErr); err != nil {
-		return err
-	}
-	return apiErr
+	return apiErrorFromResponse(resp)
 }
 
 func (c *Client) jsonBody(body any) (io.Reader, error) {
