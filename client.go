@@ -176,6 +176,10 @@ func (c *Client) WaitContext(ctx context.Context, input *WaitInput) error {
 	if input.InstanceID != "" {
 		q.Add("instance_id", input.InstanceID)
 	}
+	if input.Timeout > 0 {
+		q.Add("timeout", input.Timeout.String())
+	}
+
 	req.URL.RawQuery = q.Encode()
 
 	return c.execute(req, nil)

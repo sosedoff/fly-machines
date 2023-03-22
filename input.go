@@ -26,8 +26,8 @@ type StopInput struct {
 	Timeout time.Duration `json:"timeout,omitempty"`
 }
 
-func (r StopInput) Validate() error {
-	if r.ID == "" {
+func (i StopInput) Validate() error {
+	if i.ID == "" {
 		return ErrMachineIDRequired
 	}
 	return nil
@@ -39,8 +39,8 @@ type DeleteInput struct {
 	Kill    bool
 }
 
-func (r DeleteInput) Validate() error {
-	if r.ID == "" {
+func (i DeleteInput) Validate() error {
+	if i.ID == "" {
 		return ErrMachineIDRequired
 	}
 	return nil
@@ -54,12 +54,12 @@ type WaitInput struct {
 	Timeout    time.Duration
 }
 
-func (r WaitInput) Validate() error {
-	if r.ID == "" {
+func (i WaitInput) Validate() error {
+	if i.ID == "" {
 		return ErrMachineIDRequired
 	}
 
-	switch r.State {
+	switch i.State {
 	case StateStarted, StateStopped, StateDestroyed:
 		return nil
 	default:
