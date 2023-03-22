@@ -54,6 +54,10 @@ func (c *Client) SetBaseURL(url string) {
 	c.baseURL = url
 }
 
+func (c *Client) GetBaseURL() string {
+	return c.baseURL
+}
+
 func (c *Client) List(input *ListInput) ([]Machine, error) {
 	return c.ListContext(context.Background(), input)
 }
@@ -69,7 +73,6 @@ func (c *Client) ListContext(ctx context.Context, input *ListInput) ([]Machine, 
 
 	var machines []Machine
 	err = c.execute(req, &machines)
-
 	return machines, err
 }
 

@@ -6,11 +6,23 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	machines "github.com/sosedoff/fly-machines"
 	"github.com/stretchr/testify/require"
 )
+
+func TestConfiguration(t *testing.T) {
+	client := machines.NewClient("app")
+	require.Equal(t, "app", client.GetAppName())
+	require.Equal(t, machines.PublicBaseURL, client.GetBaseURL())
+
+	client.SetAppName("foo")
+	client.SetBaseURL("http://hostname")
+	require.Equal(t, "foo", client.GetAppName())
+	require.Equal(t, "http://hostname", client.GetBaseURL())
+}
 
 func TestListContext(t *testing.T) {
 	list, err := client.ListContext(context.Background(), nil)
@@ -50,6 +62,11 @@ func TestCreateContext(t *testing.T) {
 
 	_, err = client.CreateContext(context.Background(), &machines.CreateInput{Name: "fatal", Config: &machines.Config{}})
 	require.Equal(t, "something went wrong", err.Error())
+
+	ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
+	defer cancel()
+	_, err = client.CreateContext(ctx, &machines.CreateInput{Name: "timeout", Config: &machines.Config{}})
+	require.ErrorContains(t, err, "context deadline exceeded")
 }
 
 func TestLeaseContext(t *testing.T) {
@@ -98,8 +115,33 @@ func TestWaitContext(t *testing.T) {
 	err = client.WaitContext(context.Background(), &machines.WaitInput{ID: "foo", State: machines.StateStarted})
 	require.Equal(t, "machine does not exist", err.Error())
 
-	// err = client.WaitContext(context.Background(), &machines.WaitInput{ID: "1"})
-	// require.NoError(t, err)
+	err = client.WaitContext(context.Background(), &machines.WaitInput{ID: "1", State: machines.StateStopped})
+	require.NoError(t, err)
+}
+
+func TestWaitHelpers(t *testing.T) {
+	err := client.WaitStarted(context.Background(), &machines.Machine{ID: "1"})
+	require.NoError(t, err)
+
+	err = client.WaitStopped(context.Background(), &machines.Machine{ID: "1"})
+	require.NoError(t, err)
+
+	err = client.WaitDestroyed(context.Background(), &machines.Machine{ID: "1"})
+	require.NoError(t, err)
+}
+
+func TestStopContext(t *testing.T) {
+	err := client.StopContext(context.Background(), nil)
+	require.Equal(t, machines.ErrInputRequired, err)
+
+	err = client.StopContext(context.Background(), &machines.StopInput{})
+	require.Equal(t, machines.ErrMachineIDRequired, err)
+
+	err = client.StopContext(context.Background(), &machines.StopInput{ID: "foo"})
+	require.Equal(t, "machine does not exist", err.Error())
+
+	err = client.StopContext(context.Background(), &machines.StopInput{ID: "1"})
+	require.NoError(t, err)
 }
 
 var (
@@ -169,15 +211,21 @@ func testServer() *http.Server {
 				return
 			}
 
-			if input.Name == "fatal" {
+			switch input.Name {
+			case "fatal": // simulate crash
 				c.AbortWithStatusJSON(500, gin.H{"error": "something went wrong"})
 				return
+			case "timeout": // simulate increased latency
+				time.Sleep(time.Second)
 			}
-
 			c.String(200, fixture("get"))
 		})
 
 		api.GET("/machines/:id/wait", requireMachine, func(c *gin.Context) {
+			c.JSON(200, gin.H{"ok": true})
+		})
+
+		api.POST("/machines/:id/stop", requireMachine, func(c *gin.Context) {
 			c.JSON(200, gin.H{"ok": true})
 		})
 
