@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 )
 
 const (
@@ -43,6 +42,10 @@ func (c *Client) SetAppName(name string) {
 	c.appName = name
 }
 
+func (c *Client) GetAppName() string {
+	return c.appName
+}
+
 func (c *Client) SetToken(token string) {
 	c.apiToken = token
 }
@@ -64,18 +67,8 @@ func (c *Client) ListContext(ctx context.Context, input *ListInput) ([]Machine, 
 		input = &ListInput{} //nolint:ineffassign
 	}
 
-	resp, err := c.client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= 400 {
-		return nil, handleError(resp)
-	}
-
-	machines := []Machine{}
-	err = json.NewDecoder(resp.Body).Decode(&machines)
+	var machines []Machine
+	err = c.execute(req, &machines)
 
 	return machines, err
 }
@@ -94,21 +87,9 @@ func (c *Client) CreateContext(ctx context.Context, input *CreateInput) (*Machin
 		return nil, err
 	}
 
-	resp, err := c.client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= 400 {
-		return nil, handleError(resp)
-	}
-
-	machine := &Machine{}
-	if err := json.NewDecoder(resp.Body).Decode(machine); err != nil {
-		return nil, err
-	}
-	return machine, nil
+	var machine Machine
+	err = c.execute(req, &machine)
+	return &machine, err
 }
 
 func (c *Client) Get(input *GetInput) (*Machine, error) {
@@ -128,19 +109,16 @@ func (c *Client) GetContext(ctx context.Context, input *GetInput) (*Machine, err
 		return nil, err
 	}
 
-	resp, err := c.client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	machine := &Machine{}
-	err = json.NewDecoder(resp.Body).Decode(machine)
-
-	return machine, err
+	var machine Machine
+	err = c.execute(req, &machine)
+	return &machine, err
 }
 
-func (c *Client) Stop(ctx context.Context, input *StopInput) error {
+func (c *Client) Stop(input *StopInput) error {
+	return c.StopContext(context.Background(), input)
+}
+
+func (c *Client) StopContext(ctx context.Context, input *StopInput) error {
 	if input == nil {
 		return ErrInputRequired
 	}
@@ -153,18 +131,7 @@ func (c *Client) Stop(ctx context.Context, input *StopInput) error {
 		return err
 	}
 
-	resp, err := c.client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= 400 {
-		return handleError(resp)
-	}
-
-	_, err = io.Copy(io.Discard, resp.Body)
-	return err
+	return c.execute(req, nil)
 }
 
 func (c *Client) Delete(input *DeleteInput) error {
@@ -184,19 +151,7 @@ func (c *Client) DeleteContext(ctx context.Context, input *DeleteInput) error {
 		return err
 	}
 
-	resp, err := c.client.Do(req)
-	if err != nil {
-		return err
-	}
-	if _, err := io.Copy(os.Stdout, resp.Body); err != nil {
-		return err
-	}
-
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("received error: %v", resp.StatusCode)
-	}
-
-	return nil
+	return c.execute(req, nil)
 }
 
 func (c *Client) Wait(input *WaitInput) error {
@@ -223,19 +178,7 @@ func (c *Client) WaitContext(ctx context.Context, input *WaitInput) error {
 	}
 	req.URL.RawQuery = q.Encode()
 
-	resp, err := c.client.Do(req)
-	if err != nil {
-		return err
-	}
-	if _, err := io.Copy(os.Stdout, resp.Body); err != nil {
-		return err
-	}
-
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("received error: %v", resp.StatusCode)
-	}
-
-	return nil
+	return c.execute(req, nil)
 }
 
 func (c *Client) WaitStarted(ctx context.Context, machine *Machine) error {
@@ -252,10 +195,31 @@ func (c *Client) WaitStopped(ctx context.Context, machine *Machine) error {
 
 func (c *Client) WaitDestroyed(ctx context.Context, machine *Machine) error {
 	return c.WaitContext(ctx, &WaitInput{
-		ID: machine.ID,
-		//InstanceID: machine.InstanceID,
+		ID:    machine.ID,
 		State: StateDestroyed,
 	})
+}
+
+func (c *Client) Lease(input *LeaseInput) (*Lease, error) {
+	return c.LeaseContext(context.Background(), input)
+}
+
+func (c *Client) LeaseContext(ctx context.Context, input *LeaseInput) (*Lease, error) {
+	if input == nil {
+		return nil, ErrInputRequired
+	}
+	if err := input.Validate(); err != nil {
+		return nil, err
+	}
+
+	req, err := c.newRequest(ctx, http.MethodPost, "/machines/"+input.ID+"/lease", input)
+	if err != nil {
+		return nil, err
+	}
+
+	var lease Lease
+	err = c.execute(req, &lease)
+	return &lease, err
 }
 
 func (c *Client) urlForPath(path string) string {
@@ -270,7 +234,7 @@ func (c *Client) newRequest(ctx context.Context, method string, path string, bod
 		return nil, ErrAuthRequired
 	}
 
-	bodyReader, err := c.makeRequestBody(body)
+	bodyReader, err := c.jsonBody(body)
 	if err != nil {
 		return nil, err
 	}
@@ -285,7 +249,31 @@ func (c *Client) newRequest(ctx context.Context, method string, path string, bod
 	return req, nil
 }
 
-func (c *Client) makeRequestBody(body any) (io.Reader, error) {
+func (c *Client) execute(req *http.Request, out any) error {
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 200 && resp.StatusCode <= 299 {
+		if out == nil {
+			_, err := io.Copy(io.Discard, resp.Body)
+			return err
+		}
+		return json.NewDecoder(resp.Body).Decode(out)
+	}
+
+	apiErr := APIError{}
+	if err := json.NewDecoder(resp.Body).Decode(&apiErr); err != nil {
+		return err
+	}
+	apiErr.StatusCode = resp.StatusCode
+
+	return apiErr
+}
+
+func (c *Client) jsonBody(body any) (io.Reader, error) {
 	var bodyReader io.Reader
 
 	if body != nil {
@@ -297,15 +285,4 @@ func (c *Client) makeRequestBody(body any) (io.Reader, error) {
 	}
 
 	return bodyReader, nil
-}
-
-func handleError(resp *http.Response) error {
-	err := APIError{}
-
-	if err := json.NewDecoder(resp.Body).Decode(&err); err != nil {
-		return err
-	}
-	err.StatusCode = resp.StatusCode
-
-	return err
 }

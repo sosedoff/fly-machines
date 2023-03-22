@@ -1,0 +1,62 @@
+[
+  {
+    "id": "4d89040f431938",
+    "name": "winter-cloud-3782",
+    "state": "stopped",
+    "region": "ord",
+    "image_ref": {
+      "registry": "registry-1.docker.io",
+      "repository": "org/repo",
+      "tag": "v0",
+      "digest": "sha256:b1e9142ae612035c4da52c49ea9060ecaa2db330d1b334efcf00435c9c2f61ed"
+    },
+    "instance_id": "01GW3R0N8WCJN9QCQTN3RFEA3N",
+    "private_ip": "fdaa:0:6da:a7b:20dc:225e:e8eb:2",
+    "created_at": "2023-03-22T04:07:43Z",
+    "updated_at": "2023-03-22T04:08:01Z",
+    "config": {
+      "init": {
+        "cmd": [
+          "scan"
+        ]
+      },
+      "image": "org/repo:v0",
+      "restart": {
+        "policy": "no"
+      },
+      "guest": {
+        "cpu_kind": "shared",
+        "cpus": 1,
+        "memory_mb": 256
+      }
+    },
+    "events": [
+      {
+        "type": "exit",
+        "status": "stopped",
+        "request": {
+          "exit_event": {
+            "guest_signal": -1,
+            "signal": -1,
+            "exited_at": "2023-03-22T04:08:00.707Z"
+          }
+        },
+        "source": "flyd",
+        "timestamp": 1679458081622
+      },
+      {
+        "type": "start",
+        "status": "started",
+        "source": "flyd",
+        "timestamp": 1679458064590
+      },
+      {
+        "type": "launch",
+        "status": "created",
+        "source": "user",
+        "timestamp": 1679458063702
+      }
+    ],
+    "LeaseNonce": ""
+  }
+]

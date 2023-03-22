@@ -66,3 +66,15 @@ func (r WaitInput) Validate() error {
 		return ErrInvalidWaitState
 	}
 }
+
+type LeaseInput struct {
+	ID  string `json:"-"`
+	TTL int    `json:"ttl,omitempty"`
+}
+
+func (i LeaseInput) Validate() error {
+	if i.ID == "" {
+		return ErrMachineIDRequired
+	}
+	return nil
+}
