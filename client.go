@@ -264,12 +264,17 @@ func (c *Client) execute(req *http.Request, out any) error {
 		return json.NewDecoder(resp.Body).Decode(out)
 	}
 
-	apiErr := APIError{}
+	apiErr := APIError{
+		StatusCode: resp.StatusCode,
+		Headers:    map[string]string{},
+	}
+	for k, v := range resp.Header {
+		apiErr.Headers[k] = v[0]
+	}
+
 	if err := json.NewDecoder(resp.Body).Decode(&apiErr); err != nil {
 		return err
 	}
-	apiErr.StatusCode = resp.StatusCode
-
 	return apiErr
 }
 

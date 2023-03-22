@@ -1,17 +1,12 @@
 package machines
 
-// type APIResponse struct {
-// }
-
+// APIError is a generic error response container
 type APIError struct {
-	StatusCode   int    `json:"-"`
-	ErrorMessage string `json:"error"`
+	StatusCode   int               `json:"-"`
+	ErrorMessage string            `json:"error"`
+	Headers      map[string]string `json:"-"`
 }
 
 func (err APIError) Error() string {
 	return err.ErrorMessage
 }
-
-// type ErrBadRequest struct {
-// 	APIError
-// }
