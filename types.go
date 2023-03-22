@@ -15,6 +15,13 @@ const (
 	SizePerformance16x Size = "performance-16x"
 )
 
+type CPUKind string
+
+const (
+	CPUKindShared      = "shared"
+	CPUKindPerformance = "performance"
+)
+
 type State string
 
 const (

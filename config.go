@@ -22,7 +22,7 @@ type RestartConfig struct {
 }
 
 type GuestConfig struct {
-	CPUKind string `json:"cpu_kind"`
-	CPUs    uint   `json:"cpus"`
-	Memory  uint   `json:"memory_mb"`
+	CPUKind CPUKind `json:"cpu_kind"`
+	CPUs    uint    `json:"cpus"`
+	Memory  uint    `json:"memory_mb"`
 }

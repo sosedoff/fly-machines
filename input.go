@@ -68,8 +68,9 @@ func (i WaitInput) Validate() error {
 }
 
 type LeaseInput struct {
-	ID  string `json:"-"`
-	TTL int    `json:"ttl,omitempty"`
+	ID    string `json:"-"`
+	Nonce string `json:"-"`
+	TTL   int    `json:"ttl,omitempty"`
 }
 
 func (i LeaseInput) Validate() error {

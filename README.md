@@ -1,6 +1,6 @@
 # fly-machines
 
-Golang client for Fly.io Machines API
+Golang client for Fly.io [Machines API](https://fly.io/docs/machines/working-with-machines/)
 
 ## Installation
 

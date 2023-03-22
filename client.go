@@ -229,6 +229,23 @@ func (c *Client) LeaseContext(ctx context.Context, input *LeaseInput) (*Lease, e
 	return &lease, err
 }
 
+func (c *Client) ReleaseLeaseContext(ctx context.Context, input *LeaseInput) error {
+	if input == nil {
+		return ErrInputRequired
+	}
+	if err := input.Validate(); err != nil {
+		return err
+	}
+
+	req, err := c.newRequest(ctx, http.MethodDelete, "/machines/"+input.ID+"/lease", nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Add("fly-machine-lease-nonce", input.Nonce)
+
+	return c.execute(req, nil)
+}
+
 func (c *Client) urlForPath(path string) string {
 	return fmt.Sprintf("%s/v1/apps/%s%s", c.baseURL, c.appName, path)
 }
