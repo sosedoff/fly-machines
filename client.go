@@ -229,6 +229,10 @@ func (c *Client) LeaseContext(ctx context.Context, input *LeaseInput) (*Lease, e
 	return &lease, err
 }
 
+func (c *Client) ReleaseLease(input *LeaseInput) error {
+	return c.ReleaseLeaseContext(context.Background(), input)
+}
+
 func (c *Client) ReleaseLeaseContext(ctx context.Context, input *LeaseInput) error {
 	if input == nil {
 		return ErrInputRequired
