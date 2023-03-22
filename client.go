@@ -61,7 +61,7 @@ func (c *Client) ListContext(ctx context.Context, input *ListInput) ([]Machine, 
 		return nil, err
 	}
 	if input == nil {
-		input = &ListInput{}
+		input = &ListInput{} //nolint:ineffassign
 	}
 
 	resp, err := c.client.Do(req)
@@ -188,7 +188,9 @@ func (c *Client) DeleteContext(ctx context.Context, input *DeleteInput) error {
 	if err != nil {
 		return err
 	}
-	io.Copy(os.Stdout, resp.Body)
+	if _, err := io.Copy(os.Stdout, resp.Body); err != nil {
+		return err
+	}
 
 	if resp.StatusCode != 200 {
 		return fmt.Errorf("received error: %v", resp.StatusCode)
@@ -225,7 +227,9 @@ func (c *Client) WaitContext(ctx context.Context, input *WaitInput) error {
 	if err != nil {
 		return err
 	}
-	io.Copy(os.Stdout, resp.Body)
+	if _, err := io.Copy(os.Stdout, resp.Body); err != nil {
+		return err
+	}
 
 	if resp.StatusCode != 200 {
 		return fmt.Errorf("received error: %v", resp.StatusCode)
