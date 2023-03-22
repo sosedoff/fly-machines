@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -261,13 +260,30 @@ func (c *Client) urlForPath(path string) string {
 
 func (c *Client) newRequest(ctx context.Context, method string, path string, body any) (*http.Request, error) {
 	if c.appName == "" {
-		return nil, errors.New("app name must be set")
+		return nil, ErrAppNameRequired
 	}
 	if c.apiToken == "" {
-		return nil, errors.New("api token must be set")
+		return nil, ErrAuthRequired
 	}
 
+	bodyReader, err := c.makeRequestBody(body)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, method, c.urlForPath(path), bodyReader)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Authorization", "Bearer "+c.apiToken)
+	req.Header.Add("Content-Type", "application/json")
+
+	return req, nil
+}
+
+func (c *Client) makeRequestBody(body any) (io.Reader, error) {
 	var bodyReader io.Reader
+
 	if body != nil {
 		buf := bytes.NewBuffer(nil)
 		if err := json.NewEncoder(buf).Encode(body); err != nil {
@@ -276,15 +292,7 @@ func (c *Client) newRequest(ctx context.Context, method string, path string, bod
 		bodyReader = buf
 	}
 
-	req, err := http.NewRequestWithContext(ctx, method, c.urlForPath(path), bodyReader)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Authorization", "Bearer "+c.apiToken)
-	req.Header.Add("Content-Type", "application/json")
-
-	return req, nil
+	return bodyReader, nil
 }
 
 func handleError(resp *http.Response) error {
