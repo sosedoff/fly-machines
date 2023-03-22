@@ -2,6 +2,8 @@
 
 Golang client for Fly.io [Machines API](https://fly.io/docs/machines/working-with-machines/)
 
+_Status: Work in progress_
+
 ## Installation
 
 ```bash
