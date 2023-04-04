@@ -7,6 +7,7 @@ type Config struct {
 	Restart     *RestartConfig    `json:"restart"`
 	Guest       *GuestConfig      `json:"guest"`
 	AutoDestroy bool              `json:"auto_destroy"`
+	Schedule    Schedule          `json:"schedule"`
 }
 
 type InitConfig struct {

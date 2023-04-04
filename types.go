@@ -47,3 +47,12 @@ var (
 	PolicyConfigRestartNever = &RestartConfig{Policy: RestartPolicyNo, MaxRetries: 0}
 	PolicyConfigRestartOnce  = &RestartConfig{Policy: RestartPolicyOnFailure, MaxRetries: 1}
 )
+
+type Schedule string
+
+const (
+	ScheduleHourly  Schedule = "hourly"
+	ScheduleDaily   Schedule = "daily"
+	ScheduleWeekly  Schedule = "weekly"
+	ScheduleMonthly Schedule = "montly"
+)
