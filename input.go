@@ -20,6 +20,11 @@ type CreateInput struct {
 	Env    map[string]string `json:"env,omitempty"`
 }
 
+type CreateGroupInput struct {
+	Input *CreateInput
+	Count int
+}
+
 type StopInput struct {
 	ID      string        `json:"id,omitempty"`
 	Signal  int           `json:"signal,omitempty"`

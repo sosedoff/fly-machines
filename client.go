@@ -250,6 +250,32 @@ func (c *Client) ReleaseLeaseContext(ctx context.Context, input *LeaseInput) err
 	return c.execute(req, nil)
 }
 
+// CreateGroup launches a group of machines with provided configuration
+func (c *Client) CreateGroup(ctx context.Context, input *CreateGroupInput) ([]*Machine, error) {
+	if input == nil {
+		return nil, ErrInputRequired
+	}
+
+	base := input.Input.Name
+	result := []*Machine{}
+
+	for n := 1; n <= input.Count; n++ {
+		if base != "" {
+			input.Input.Name = fmt.Sprintf("%s-%d", base, n)
+		}
+
+		m, err := c.CreateContext(ctx, input.Input)
+		if m != nil {
+			result = append(result, m)
+		}
+		if err != nil {
+			return result, err
+		}
+	}
+
+	return result, nil
+}
+
 func (c *Client) urlForPath(path string) string {
 	return fmt.Sprintf("%s/v1/apps/%s%s", c.baseURL, c.appName, path)
 }
