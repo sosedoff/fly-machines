@@ -1,14 +1,15 @@
 package machines
 
 type Config struct {
-	Image       string            `json:"image"`
-	Env         map[string]string `json:"env"`
-	Init        *InitConfig       `json:"init"`
-	Restart     *RestartConfig    `json:"restart"`
-	Guest       *GuestConfig      `json:"guest"`
-	AutoDestroy bool              `json:"auto_destroy"`
-	Schedule    Schedule          `json:"schedule,omitempty"`
-	Services    []ServiceConfig   `json:"services,omitempty"`
+	Image       string                 `json:"image"`
+	Env         map[string]string      `json:"env"`
+	Init        *InitConfig            `json:"init"`
+	Restart     *RestartConfig         `json:"restart"`
+	Guest       *GuestConfig           `json:"guest"`
+	AutoDestroy bool                   `json:"auto_destroy"`
+	Schedule    Schedule               `json:"schedule,omitempty"`
+	Services    []ServiceConfig        `json:"services,omitempty"`
+	Checks      map[string]CheckConfig `json:"checks,omitempty"`
 }
 
 type InitConfig struct {
@@ -46,4 +47,21 @@ type PortConfig struct {
 	Port       *int     `json:"port,omitempty"`
 	Handlers   []string `json:"handlers,omitempty"`
 	ForceHTTPS *bool    `json:"force_https,omitempty"`
+}
+
+type CheckConfig struct {
+	Type          string        `json:"type"`
+	Protocol      string        `json:"protocol,omitempty"`
+	Port          int           `json:"port,omitempty"`
+	Interval      string        `json:"interval"`
+	Timeout       string        `json:"timeout"`
+	Method        string        `json:"method,omitempty"`
+	Path          string        `json:"path,omitempty"`
+	TLSSkipVerify *bool         `json:"tls_skip_verify,omitempty"`
+	Headers       []CheckHeader `json:"headers,omitempty"`
+}
+
+type CheckHeader struct {
+	Name   string   `json:"name"`
+	Values []string `json:"values"`
 }
