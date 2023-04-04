@@ -54,5 +54,12 @@ const (
 	ScheduleHourly  Schedule = "hourly"
 	ScheduleDaily   Schedule = "daily"
 	ScheduleWeekly  Schedule = "weekly"
-	ScheduleMonthly Schedule = "montly"
+	ScheduleMonthly Schedule = "monthly"
+)
+
+type Protocol string
+
+const (
+	ProtocolTCP Protocol = "tcp"
+	ProtocolUDP Protocol = "udp"
 )
