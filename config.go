@@ -10,6 +10,7 @@ type Config struct {
 	Schedule    Schedule               `json:"schedule,omitempty"`
 	Services    []ServiceConfig        `json:"services,omitempty"`
 	Checks      map[string]CheckConfig `json:"checks,omitempty"`
+	Metadata    map[string]string      `json:"metadata,omitempty"`
 }
 
 type InitConfig struct {

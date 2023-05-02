@@ -13,11 +13,10 @@ type GetInput struct {
 }
 
 type CreateInput struct {
-	Name   string            `json:"name,omitempty"`
-	Region string            `json:"region,omitempty"`
-	Config *Config           `json:"config"`
-	Size   Size              `json:"size,omitempty"`
-	Env    map[string]string `json:"env,omitempty"`
+	Name   string  `json:"name,omitempty"`
+	Region string  `json:"region,omitempty"`
+	Config *Config `json:"config"`
+	Size   Size    `json:"size,omitempty"`
 }
 
 type CreateGroupInput struct {
