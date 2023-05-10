@@ -10,14 +10,6 @@ import (
 	machines "github.com/sosedoff/fly-machines"
 )
 
-func fixture(path string) string {
-	data, err := os.ReadFile(filepath.Join("testdata", path+".json"))
-	if err != nil {
-		panic(err)
-	}
-	return string(data)
-}
-
 func Server(appName string) *httptest.Server {
 	srv := gin.New()
 	srv.Use(func(c *gin.Context) {
@@ -78,4 +70,12 @@ func Server(appName string) *httptest.Server {
 	}
 
 	return httptest.NewServer(srv.Handler())
+}
+
+func fixture(path string) string {
+	data, err := os.ReadFile(filepath.Join("testdata", path+".json"))
+	if err != nil {
+		panic(err)
+	}
+	return string(data)
 }
