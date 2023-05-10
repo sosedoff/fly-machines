@@ -2,15 +2,14 @@ package machines_test
 
 import (
 	"context"
-	"net/http"
-	"os"
-	"path/filepath"
+	"net/http/httptest"
 	"testing"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	machines "github.com/sosedoff/fly-machines"
 	"github.com/stretchr/testify/require"
+
+	machines "github.com/sosedoff/fly-machines"
+	"github.com/sosedoff/fly-machines/testdata"
 )
 
 func TestConfiguration(t *testing.T) {
@@ -146,96 +145,17 @@ func TestStopContext(t *testing.T) {
 
 var (
 	client *machines.Client
-	server *http.Server
+	server *httptest.Server
 )
 
 func init() {
-	client = testClient()
-	server = testServer()
-
-	go func() {
-		if err := server.ListenAndServe(); err != nil {
-			panic(err)
-		}
-	}()
+	server = testdata.Server("app")
+	client = testClient(server.URL)
 }
 
-func testClient() *machines.Client {
+func testClient(url string) *machines.Client {
 	client := machines.NewClient("app")
-	client.SetBaseURL("http://localhost:30555")
+	client.SetBaseURL(url)
 	client.SetToken("api_token")
 	return client
-}
-
-func fixture(path string) string {
-	data, err := os.ReadFile(filepath.Join("testdata", path+".json"))
-	if err != nil {
-		panic(err)
-	}
-	return string(data)
-}
-
-func testServer() *http.Server {
-	srv := gin.New()
-	srv.Use(func(c *gin.Context) {
-		c.Header("Content-Type", "application/json")
-	})
-
-	requireMachine := func(c *gin.Context) {
-		if c.Param("id") == "foo" {
-			c.AbortWithStatusJSON(404, gin.H{"error": "machine does not exist"})
-		}
-	}
-
-	api := srv.Group("/v1/apps/" + client.GetAppName())
-	{
-		api.POST("/machines/:id/lease", requireMachine, func(c *gin.Context) {
-			c.String(200, fixture("create_lease"))
-		})
-
-		api.GET("/machines", func(c *gin.Context) {
-			c.String(200, fixture("list"))
-		})
-
-		api.GET("/machines/:id", requireMachine, func(c *gin.Context) {
-			c.String(200, fixture("get"))
-		})
-
-		api.POST("/machines", func(c *gin.Context) {
-			input := machines.CreateInput{}
-			if err := c.BindJSON(&input); err != nil {
-				panic(err)
-			}
-			if input.Config == nil {
-				c.AbortWithStatusJSON(400, gin.H{"error": "no config provided"})
-				return
-			}
-
-			switch input.Name {
-			case "fatal": // simulate crash
-				c.AbortWithStatusJSON(500, gin.H{"error": "something went wrong"})
-				return
-			case "timeout": // simulate increased latency
-				time.Sleep(time.Second)
-			}
-			c.String(200, fixture("get"))
-		})
-
-		api.GET("/machines/:id/wait", requireMachine, func(c *gin.Context) {
-			c.JSON(200, gin.H{"ok": true})
-		})
-
-		api.POST("/machines/:id/stop", requireMachine, func(c *gin.Context) {
-			c.JSON(200, gin.H{"ok": true})
-		})
-
-		api.DELETE("/machines/:id", requireMachine, func(c *gin.Context) {
-			c.JSON(200, gin.H{"ok": true})
-		})
-	}
-
-	return &http.Server{
-		Addr:    ":30555",
-		Handler: srv.Handler(),
-	}
 }
