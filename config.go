@@ -9,6 +9,7 @@ type Config struct {
 	AutoDestroy bool                   `json:"auto_destroy"`
 	Schedule    Schedule               `json:"schedule,omitempty"`
 	Services    []ServiceConfig        `json:"services,omitempty"`
+	Mounts      []MountConfig          `json:"mounts,omitempty"`
 	Checks      map[string]CheckConfig `json:"checks,omitempty"`
 	Metadata    map[string]string      `json:"metadata,omitempty"`
 }
@@ -65,4 +66,9 @@ type CheckConfig struct {
 type CheckHeader struct {
 	Name   string   `json:"name"`
 	Values []string `json:"values"`
+}
+
+type MountConfig struct {
+	VolumeID string `json:"volume"`
+	Path     string `json:"path"`
 }
